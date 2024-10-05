@@ -53,7 +53,7 @@ func checkProxy(ip string) {
 		statok++
 		luufile(ip)
 	} else {
-		all++
+	//	all++
 		fall++
 	}
 	all++
