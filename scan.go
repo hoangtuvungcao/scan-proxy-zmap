@@ -15,11 +15,12 @@ var syncWait sync.WaitGroup
 
 var statok, fall, all int
 var port int
+var filename string
 
-func checkProxy(proxyURL string) {
+func checkProxy(ip string) {
 	defer syncWait.Done()
 	
-	proxy := fmt.Sprintf("http://%s:%d", proxyURL, port) 
+	proxy := fmt.Sprintf("http://%s:%d", ip, port) 
 
 	parsedProxy, err := url.Parse(proxy)
 	if err != nil {
@@ -50,14 +51,35 @@ func checkProxy(proxyURL string) {
 
 	if resp.StatusCode == http.StatusOK {
 		statok++
+		luufile(ip)
 	} else {
 		all++
 		fall++
 	}
 	all++
 }
+func luufile(ip string) {
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Println("Lỗi khi mở tệp:", err)
+		return
+	}
+	defer file.Close()
+	
+	content := ip+ "\n"
+
+	_, err = file.WriteString(content)
+	if err != nil {
+		fmt.Println("Lỗi khi ghi vào tệp:", err)
+		return
+	}
+
+
+	
+}
 
 func main() {
+	
 	const (
 		Reset   = "\033[0m"
 		Red     = "\033[31m"
@@ -80,6 +102,7 @@ func main() {
 	} else {
 		port = 8080 
 	}
+	filename = fmt.Sprintf("proxy_%d.txt", port)
 	var timest  int
 
 
