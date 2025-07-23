@@ -1,6 +1,6 @@
 # 🔎 scan-proxy-zmap
 
-Tool scan proxy HTTP bằng ZMap siêu nhanh.
+Tool scan proxy HTTP bằng ZMap siêu nhanh. 
 
 ---
 
@@ -15,8 +15,13 @@ cd scan-proxy-zmap && \
 go build && \
 echo "✅ Done"
 ```
+## hd dùng : 
+```bash
+zmap -p  [port] -w If there is an IP list, if there isn't, then that's it. -i [Network Interface] -q [off log zmap]  | ./KamiPP [port]
+.... exp:
 
-
-##💸 Donate
+zamp -p 80 -w subnetvn -q | ./KamiPP 80
+```
+##Donate
 
 PayPal: quangtd031@gmail.com
