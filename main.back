@@ -1,0 +1,168 @@
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"h12.io/socks"
+	"log"
+	"net"
+	"net/http"
+	"net/url"
+	"os"
+	"strings"
+	"sync"
+	"time"
+)
+
+var (
+	syncWait          = sync.WaitGroup{}
+	website    string = "https://www.google.com"
+	user_agent string = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.115 Safari/537.36"
+	apet       string = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8"
+)
+
+func TaGet(ip string, port string) {
+	var (
+		name string
+		prun bool = false
+	)
+
+	defer syncWait.Done()
+	proxy := fmt.Sprintf("%s:%s", ip, port)
+	if !Http_check(proxy) {
+		if !socks4(proxy, "5") {
+			if socks4(proxy, "4") {
+				name = "socks4"
+				prun = true
+			}
+		} else {
+			name = "socks5"
+			prun = true
+		}
+
+	} else {
+		name = "http"
+		prun = true
+	}
+	if prun {
+		fmt.Println("\033[32m" + name + "\033[0m " + "\033[33m" + proxy + "\033[0m")
+
+		savefile(name, proxy)
+	}
+
+}
+
+var fileLock sync.Mutex
+
+func savefile(name, ip string) {
+	fileLock.Lock()
+	defer fileLock.Unlock()
+	filename := fmt.Sprintf("%s.txt", name)
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Println("Không mở được file:", err)
+		return
+	}
+	defer file.Close()
+
+	newLine := fmt.Sprintf("%s\n", ip)
+
+	if _, err := file.WriteString(newLine); err != nil {
+		fmt.Println("Không ghi được vào file:", err)
+	}
+}
+func socks4(p, v string) bool {
+
+	tr := &http.Transport{
+		Dial: socks.Dial(fmt.Sprintf("socks%s://%s?timeout=%ds", v, p, 8)),
+	}
+	client := http.Client{
+		Timeout:   time.Second * time.Duration(30),
+		Transport: tr,
+	}
+
+	req, err := http.NewRequest("GET", website, nil)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	req.Header.Add("User-Agent", user_agent)
+	req.Header.Add("accept", apet)
+
+	res, err := client.Do(req)
+	if err != nil {
+		return false
+	}
+	res.Body.Close()
+	if res.StatusCode == 200 {
+		return true
+	}
+
+	return false
+}
+func Http_check(p string) bool {
+
+	proxyUrl, err := url.Parse(fmt.Sprintf("http://%s", p))
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+
+	tr := &http.Transport{
+		Proxy: http.ProxyURL(proxyUrl),
+		DialContext: (&net.Dialer{
+			Timeout:   time.Second * time.Duration(30),
+			KeepAlive: time.Second,
+			DualStack: true,
+		}).DialContext,
+	}
+	client := http.Client{
+		Timeout:   time.Second * time.Duration(30),
+		Transport: tr,
+	}
+	req, err := http.NewRequest("GET", website, nil)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	req.Header.Add("User-Agent", user_agent)
+	req.Header.Add("accept", apet)
+
+	res, err := client.Do(req)
+	if err != nil {
+		return false
+	}
+	res.Body.Close()
+	if res.StatusCode == 200 {
+		return true
+	}
+	return false
+}
+func main() {
+	if len(os.Args) < 2 {
+		fmt.Println("Usage: ./tool <port | listen>")
+		return
+	}
+	scan := bufio.NewScanner(os.Stdin)
+	for scan.Scan() {
+		target := strings.TrimSpace(scan.Text())
+		if target == "" {
+			continue
+		}
+
+		var fullTarget string
+		if os.Args[1] == "listen" {
+			fullTarget = "80"
+		} else {
+			fullTarget = os.Args[1]
+		}
+		
+		syncWait.Add(1)
+		go TaGet(target, fullTarget)
+	}
+
+	if err := scan.Err(); err != nil {
+		fmt.Fprintf(os.Stderr, "Lỗi khi đọc input: %v\n", err)
+	}
+
+	syncWait.Wait()
+}
+
