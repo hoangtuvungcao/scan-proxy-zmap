@@ -10,7 +10,7 @@ Tool scan proxy HTTP bằng ZMap siêu nhanh.
 apt update -y && \
 apt install zmap -y && \
 snap install go --classic && \
-git clone https://github.com/kami2k1/scan-proxy-zmap && \
+git clone https://github.com/hoangtuvungcao/scan-proxy-zmap && \
 cd scan-proxy-zmap && \
 go build && \
 echo "✅ Done"
@@ -22,6 +22,3 @@ zmap -p  [port] -w If there is an IP list, if there isn't, then that's it. -i [N
 
 zamp -p 80 -w subnetvn -q | ./KamiPP 80
 ```
-##Donate
-
-PayPal: quangtd031@gmail.com
